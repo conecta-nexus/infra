@@ -260,7 +260,7 @@ resource "google_cloud_run_v2_service" "gateway" {
       resources {
         limits = {
           cpu    = "1"
-          memory = "256Mi"
+          memory = "512Mi"
         }
       }
     }
