@@ -199,10 +199,6 @@ resource "google_cloud_run_v2_service" "frontend" {
         value = "0.0.0.0"
       }
       env {
-        name  = "PORT"
-        value = "3000"
-      }
-      env {
         name  = "NODE_ENV"
         value = "production"
       }
@@ -248,10 +244,6 @@ resource "google_cloud_run_v2_service" "gateway" {
         container_port = 80
       }
 
-      env {
-        name  = "PORT"
-        value = "80"
-      }
       env {
         name  = "AUTH_URL"
         value = google_cloud_run_v2_service.auth[0].uri
