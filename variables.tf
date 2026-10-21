@@ -80,3 +80,20 @@ variable "django_secret_key" {
   sensitive   = true
   default     = "django-insecure-conecta-nexus-cloud-production-secret"
 }
+
+# ------------------------------------------------------------------------------
+# Cryptographic Keys (RS256 JWT Authentication - ADR-002)
+# ------------------------------------------------------------------------------
+
+variable "jwt_private_key" {
+  type        = string
+  description = "Optional custom 2048-bit RSA private key in PEM format for RS256 token signing. If empty, a secure key pair is automatically generated."
+  sensitive   = true
+  default     = ""
+}
+
+variable "jwt_public_key" {
+  type        = string
+  description = "Optional custom 2048-bit RSA public key in PEM format for RS256 token verification. If empty, derived from generated private key."
+  default     = ""
+}

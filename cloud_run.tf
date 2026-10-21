@@ -3,6 +3,19 @@
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
+# RSA Key Pair for RS256 JWT Authentication (ADR-002)
+# ------------------------------------------------------------------------------
+resource "tls_private_key" "jwt_key" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+locals {
+  jwt_private_key = var.jwt_private_key != "" ? var.jwt_private_key : tls_private_key.jwt_key.private_key_pem
+  jwt_public_key  = var.jwt_public_key != "" ? var.jwt_public_key : tls_private_key.jwt_key.public_key_pem
+}
+
+# ------------------------------------------------------------------------------
 # 1. Microservice: Auth (FastAPI + uv)
 # ------------------------------------------------------------------------------
 resource "google_cloud_run_v2_service" "auth" {
@@ -48,6 +61,14 @@ resource "google_cloud_run_v2_service" "auth" {
       env {
         name  = "DATABASE_URL"
         value = "postgresql+asyncpg://${var.db_user}:${local.db_password}@/db_auth?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
+      }
+      env {
+        name  = "JWT_PRIVATE_KEY"
+        value = local.jwt_private_key
+      }
+      env {
+        name  = "JWT_PUBLIC_KEY"
+        value = local.jwt_public_key
       }
 
       resources {
@@ -133,6 +154,10 @@ resource "google_cloud_run_v2_service" "profile" {
         name  = "POSTGRES_PORT"
         value = "5432"
       }
+      env {
+        name  = "JWT_PUBLIC_KEY"
+        value = local.jwt_public_key
+      }
 
       resources {
         limits = {
@@ -180,6 +205,14 @@ resource "google_cloud_run_v2_service" "frontend" {
       env {
         name  = "NODE_ENV"
         value = "production"
+      }
+      env {
+        name  = "NUXT_TELEMETRY_DISABLED"
+        value = "1"
+      }
+      env {
+        name  = "NUXT_PUBLIC_API_BASE"
+        value = "/api/v1"
       }
 
       resources {
