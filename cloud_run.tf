@@ -19,10 +19,11 @@ locals {
 # 1. Microservice: Auth (FastAPI + uv)
 # ------------------------------------------------------------------------------
 resource "google_cloud_run_v2_service" "auth" {
-  count    = var.deploy_services ? 1 : 0
-  name     = "conecta-auth"
-  location = var.region
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  count               = var.deploy_services ? 1 : 0
+  name                = "conecta-auth"
+  location            = var.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = false
 
   template {
     service_account = google_service_account.cloud_run_sa.email
@@ -91,10 +92,11 @@ resource "google_cloud_run_v2_service" "auth" {
 # 2. Microservice: Profile (Django + DRF + uv)
 # ------------------------------------------------------------------------------
 resource "google_cloud_run_v2_service" "profile" {
-  count    = var.deploy_services ? 1 : 0
-  name     = "conecta-profile"
-  location = var.region
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  count               = var.deploy_services ? 1 : 0
+  name                = "conecta-profile"
+  location            = var.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = false
 
   template {
     service_account = google_service_account.cloud_run_sa.email
@@ -179,10 +181,11 @@ resource "google_cloud_run_v2_service" "profile" {
 # 3. Frontend: Nuxt 4 (Vue 3, Vite, Tailwind CSS)
 # ------------------------------------------------------------------------------
 resource "google_cloud_run_v2_service" "frontend" {
-  count    = var.deploy_services ? 1 : 0
-  name     = "conecta-frontend"
-  location = var.region
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  count               = var.deploy_services ? 1 : 0
+  name                = "conecta-frontend"
+  location            = var.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = false
 
   template {
     service_account = google_service_account.cloud_run_sa.email
@@ -229,10 +232,11 @@ resource "google_cloud_run_v2_service" "frontend" {
 # 4. API Gateway: Nginx Reverse Proxy
 # ------------------------------------------------------------------------------
 resource "google_cloud_run_v2_service" "gateway" {
-  count    = var.deploy_services ? 1 : 0
-  name     = "conecta-gateway"
-  location = var.region
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  count               = var.deploy_services ? 1 : 0
+  name                = "conecta-gateway"
+  location            = var.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = false
 
   template {
     service_account = google_service_account.cloud_run_sa.email
