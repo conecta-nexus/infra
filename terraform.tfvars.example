@@ -1,0 +1,30 @@
+# ==============================================================================
+# Sample Terraform Variables Configuration
+# Copy this file to terraform.tfvars and customize with your GCP settings:
+#   cp terraform.tfvars.example terraform.tfvars
+# ==============================================================================
+
+# Required: Replace with your Google Cloud Project ID
+project_id = "your-gcp-project-id"
+
+# Region for Artifact Registry, Cloud Run, and Cloud SQL
+region = "us-central1"
+
+# Environment name
+environment = "dev"
+
+# Artifact Registry repository name
+artifact_registry_repo_id = "conecta-nexus"
+
+# Cloud SQL instance configuration
+db_instance_name = "conecta-nexus-pg"
+db_tier          = "db-f1-micro"
+db_user          = "postgres"
+# Leave db_password empty to auto-generate a secure random password:
+# db_password    = "your-custom-db-password"
+
+# Set to true only AFTER building and pushing container images to Artifact Registry
+deploy_services = false
+
+# Image tag
+image_tag = "latest"
