@@ -34,6 +34,7 @@ resource "google_sql_database_instance" "postgres" {
   deletion_protection = false
 
   settings {
+    edition           = var.db_edition
     tier              = var.db_tier
     disk_size         = 10
     disk_type         = "PD_SSD"

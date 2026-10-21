@@ -18,6 +18,7 @@ artifact_registry_repo_id = "conecta-nexus"
 
 # Cloud SQL instance configuration
 db_instance_name = "conecta-nexus-pg"
+db_edition       = "ENTERPRISE"
 db_tier          = "db-f1-micro"
 db_user          = "postgres"
 # Leave db_password empty to auto-generate a secure random password:

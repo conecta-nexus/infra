@@ -39,6 +39,12 @@ variable "db_instance_name" {
   default     = "conecta-nexus-pg"
 }
 
+variable "db_edition" {
+  type        = string
+  description = "The edition of the Cloud SQL instance (ENTERPRISE or ENTERPRISE_PLUS). Must be ENTERPRISE for shared-core tiers like db-f1-micro."
+  default     = "ENTERPRISE"
+}
+
 variable "db_tier" {
   type        = string
   description = "Machine type for the Cloud SQL instance (e.g., db-f1-micro, db-g1-small, db-custom-1-3840)."
