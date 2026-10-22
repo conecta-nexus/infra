@@ -33,3 +33,23 @@ resource "google_project_iam_member" "artifact_reader" {
   role    = "roles/artifactregistry.reader"
   member  = "serviceAccount:${google_service_account.cloud_run_sa.email}"
 }
+
+# ------------------------------------------------------------------------------
+# Cloud Build Permissions
+# ------------------------------------------------------------------------------
+
+# Retrieve project number to resolve default Cloud Build Service Account
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
+# Grant Cloud Build SA permission to push images to Artifact Registry
+resource "google_project_iam_member" "cloudbuild_artifact_writer" {
+  project = var.project_id
+  role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:${data.google_project.current.number}@cloudbuild.gserviceaccount.com"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"]
+  ]
+}

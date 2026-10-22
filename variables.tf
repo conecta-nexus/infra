@@ -39,6 +39,12 @@ variable "db_instance_name" {
   default     = "conecta-nexus-pg"
 }
 
+variable "db_edition" {
+  type        = string
+  description = "The edition of the Cloud SQL instance (ENTERPRISE or ENTERPRISE_PLUS). Must be ENTERPRISE for shared-core tiers like db-f1-micro."
+  default     = "ENTERPRISE"
+}
+
 variable "db_tier" {
   type        = string
   description = "Machine type for the Cloud SQL instance (e.g., db-f1-micro, db-g1-small, db-custom-1-3840)."
@@ -79,4 +85,21 @@ variable "django_secret_key" {
   description = "Secret key for Django-based microservices (profile, etc.)."
   sensitive   = true
   default     = "django-insecure-conecta-nexus-cloud-production-secret"
+}
+
+# ------------------------------------------------------------------------------
+# Cryptographic Keys (RS256 JWT Authentication - ADR-002)
+# ------------------------------------------------------------------------------
+
+variable "jwt_private_key" {
+  type        = string
+  description = "Optional custom 2048-bit RSA private key in PEM format for RS256 token signing. If empty, a secure key pair is automatically generated."
+  sensitive   = true
+  default     = ""
+}
+
+variable "jwt_public_key" {
+  type        = string
+  description = "Optional custom 2048-bit RSA public key in PEM format for RS256 token verification. If empty, derived from generated private key."
+  default     = ""
 }

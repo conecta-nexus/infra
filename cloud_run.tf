@@ -3,13 +3,27 @@
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
+# RSA Key Pair for RS256 JWT Authentication (ADR-002)
+# ------------------------------------------------------------------------------
+resource "tls_private_key" "jwt_key" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+locals {
+  jwt_private_key = var.jwt_private_key != "" ? var.jwt_private_key : tls_private_key.jwt_key.private_key_pem
+  jwt_public_key  = var.jwt_public_key != "" ? var.jwt_public_key : tls_private_key.jwt_key.public_key_pem
+}
+
+# ------------------------------------------------------------------------------
 # 1. Microservice: Auth (FastAPI + uv)
 # ------------------------------------------------------------------------------
 resource "google_cloud_run_v2_service" "auth" {
-  count    = var.deploy_services ? 1 : 0
-  name     = "conecta-auth"
-  location = var.region
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  count               = var.deploy_services ? 1 : 0
+  name                = "conecta-auth"
+  location            = var.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = false
 
   template {
     service_account = google_service_account.cloud_run_sa.email
@@ -49,6 +63,14 @@ resource "google_cloud_run_v2_service" "auth" {
         name  = "DATABASE_URL"
         value = "postgresql+asyncpg://${var.db_user}:${local.db_password}@/db_auth?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
       }
+      env {
+        name  = "JWT_PRIVATE_KEY"
+        value = local.jwt_private_key
+      }
+      env {
+        name  = "JWT_PUBLIC_KEY"
+        value = local.jwt_public_key
+      }
 
       resources {
         limits = {
@@ -70,10 +92,11 @@ resource "google_cloud_run_v2_service" "auth" {
 # 2. Microservice: Profile (Django + DRF + uv)
 # ------------------------------------------------------------------------------
 resource "google_cloud_run_v2_service" "profile" {
-  count    = var.deploy_services ? 1 : 0
-  name     = "conecta-profile"
-  location = var.region
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  count               = var.deploy_services ? 1 : 0
+  name                = "conecta-profile"
+  location            = var.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = false
 
   template {
     service_account = google_service_account.cloud_run_sa.email
@@ -133,6 +156,10 @@ resource "google_cloud_run_v2_service" "profile" {
         name  = "POSTGRES_PORT"
         value = "5432"
       }
+      env {
+        name  = "JWT_PUBLIC_KEY"
+        value = local.jwt_public_key
+      }
 
       resources {
         limits = {
@@ -154,10 +181,11 @@ resource "google_cloud_run_v2_service" "profile" {
 # 3. Frontend: Nuxt 4 (Vue 3, Vite, Tailwind CSS)
 # ------------------------------------------------------------------------------
 resource "google_cloud_run_v2_service" "frontend" {
-  count    = var.deploy_services ? 1 : 0
-  name     = "conecta-frontend"
-  location = var.region
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  count               = var.deploy_services ? 1 : 0
+  name                = "conecta-frontend"
+  location            = var.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = false
 
   template {
     service_account = google_service_account.cloud_run_sa.email
@@ -174,12 +202,16 @@ resource "google_cloud_run_v2_service" "frontend" {
         value = "0.0.0.0"
       }
       env {
-        name  = "PORT"
-        value = "3000"
-      }
-      env {
         name  = "NODE_ENV"
         value = "production"
+      }
+      env {
+        name  = "NUXT_TELEMETRY_DISABLED"
+        value = "1"
+      }
+      env {
+        name  = "NUXT_PUBLIC_API_BASE"
+        value = "/api/v1"
       }
 
       resources {
@@ -200,10 +232,11 @@ resource "google_cloud_run_v2_service" "frontend" {
 # 4. API Gateway: Nginx Reverse Proxy
 # ------------------------------------------------------------------------------
 resource "google_cloud_run_v2_service" "gateway" {
-  count    = var.deploy_services ? 1 : 0
-  name     = "conecta-gateway"
-  location = var.region
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  count               = var.deploy_services ? 1 : 0
+  name                = "conecta-gateway"
+  location            = var.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = false
 
   template {
     service_account = google_service_account.cloud_run_sa.email
@@ -215,10 +248,6 @@ resource "google_cloud_run_v2_service" "gateway" {
         container_port = 80
       }
 
-      env {
-        name  = "PORT"
-        value = "80"
-      }
       env {
         name  = "AUTH_URL"
         value = google_cloud_run_v2_service.auth[0].uri
@@ -235,7 +264,7 @@ resource "google_cloud_run_v2_service" "gateway" {
       resources {
         limits = {
           cpu    = "1"
-          memory = "256Mi"
+          memory = "512Mi"
         }
       }
     }
