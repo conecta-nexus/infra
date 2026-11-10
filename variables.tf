@@ -103,3 +103,19 @@ variable "jwt_public_key" {
   description = "Optional custom 2048-bit RSA public key in PEM format for RS256 token verification. If empty, derived from generated private key."
   default     = ""
 }
+
+# ------------------------------------------------------------------------------
+# Serverless VPC Access (Challenge Microservice)
+# ------------------------------------------------------------------------------
+
+variable "challenge_vpc_network" {
+  type        = string
+  description = "VPC network name for the Challenge Serverless VPC Access connector."
+  default     = "default"
+}
+
+variable "challenge_vpc_connector_cidr" {
+  type        = string
+  description = "CIDR /28 IP range for the Challenge Serverless VPC Access connector."
+  default     = "10.8.0.0/28"
+}

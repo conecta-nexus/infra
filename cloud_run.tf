@@ -279,6 +279,101 @@ resource "google_cloud_run_v2_service" "gateway" {
 }
 
 # ------------------------------------------------------------------------------
+# Serverless VPC Access Connector: Challenge
+# ------------------------------------------------------------------------------
+resource "google_vpc_access_connector" "challenge" {
+  count         = var.deploy_services ? 1 : 0
+  name          = "conecta-challenge-vpc"
+  region        = var.region
+  network       = var.challenge_vpc_network
+  ip_cidr_range = var.challenge_vpc_connector_cidr
+
+  depends_on = [
+    google_project_service.services["vpcaccess.googleapis.com"]
+  ]
+}
+
+# ------------------------------------------------------------------------------
+# 5. Microservice: Challenge (FastAPI + uv)
+# ------------------------------------------------------------------------------
+resource "google_cloud_run_v2_service" "challenge" {
+  count               = var.deploy_services ? 1 : 0
+  name                = "conecta-challenge"
+  location            = var.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = false
+
+  template {
+    service_account = google_service_account.cloud_run_sa.email
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 5
+    }
+
+    vpc_access {
+      connector = google_vpc_access_connector.challenge[0].id
+      egress    = "PRIVATE_RANGES_ONLY"
+    }
+
+    volumes {
+      name = "cloudsql"
+      cloud_sql_instance {
+        instances = [google_sql_database_instance.postgres.connection_name]
+      }
+    }
+
+    containers {
+      image = "${local.artifact_repo_url}/challenge:${var.image_tag}"
+
+      ports {
+        container_port = 8000
+      }
+
+      volume_mounts {
+        name       = "cloudsql"
+        mount_path = "/cloudsql"
+      }
+
+      env {
+        name  = "PYTHONUNBUFFERED"
+        value = "1"
+      }
+      env {
+        name  = "APP_ENV"
+        value = "production"
+      }
+      env {
+        name  = "DB_ECHO"
+        value = "false"
+      }
+      env {
+        name  = "DATABASE_URL"
+        value = "postgresql+asyncpg://${var.db_user}:${local.db_password}@/db_challenges?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
+      }
+      env {
+        name  = "JWT_PUBLIC_KEY_PATH"
+        value = "certs/jwt_public.pem"
+      }
+
+      resources {
+        limits = {
+          cpu    = "1"
+          memory = "512Mi"
+        }
+      }
+    }
+  }
+
+  depends_on = [
+    google_sql_database.databases,
+    google_sql_user.db_user,
+    google_project_service.services["run.googleapis.com"],
+    google_vpc_access_connector.challenge
+  ]
+}
+
+# ------------------------------------------------------------------------------
 # Public Access Permissions (roles/run.invoker for allUsers)
 # ------------------------------------------------------------------------------
 
@@ -316,4 +411,17 @@ resource "google_cloud_run_v2_service_iam_member" "public_profile" {
   name     = google_cloud_run_v2_service.profile[0].name
   role     = "roles/run.invoker"
   member   = "allUsers"
+}
+
+# ------------------------------------------------------------------------------
+# Service-to-Service Access Permissions (Gateway Runtime SA -> Challenge)
+# ------------------------------------------------------------------------------
+
+resource "google_cloud_run_v2_service_iam_member" "challenge_invoker" {
+  count    = var.deploy_services ? 1 : 0
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.challenge[0].name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.cloud_run_sa.email}"
 }
