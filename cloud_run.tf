@@ -349,7 +349,7 @@ resource "google_cloud_run_v2_service" "challenge" {
       }
       env {
         name  = "DATABASE_URL"
-        value = "postgresql+asyncpg://${var.db_user}:${local.db_password}@/db_challenges?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
+        value = "postgresql+asyncpg://${var.db_user}:${local.db_password}@/${google_sql_database.challenges.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
       }
       env {
         name  = "JWT_PUBLIC_KEY_PATH"
@@ -367,6 +367,7 @@ resource "google_cloud_run_v2_service" "challenge" {
 
   depends_on = [
     google_sql_database.databases,
+    google_sql_database.challenges,
     google_sql_user.db_user,
     google_project_service.services["run.googleapis.com"],
     google_vpc_access_connector.challenge
