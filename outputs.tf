@@ -67,6 +67,16 @@ output "profile_service_url" {
   value       = var.deploy_services ? google_cloud_run_v2_service.profile[0].uri : "Not deployed yet (Phase 1)."
 }
 
+output "challenge_service_url" {
+  description = "Direct URL for the Challenge microservice."
+  value       = var.deploy_services ? google_cloud_run_v2_service.challenge[0].uri : "Not deployed yet (Phase 1)."
+}
+
+output "application_service_url" {
+  description = "Direct URL for the Application microservice."
+  value       = var.deploy_services ? google_cloud_run_v2_service.application[0].uri : "Not deployed yet (Phase 1)."
+}
+
 # ------------------------------------------------------------------------------
 # Cloud Storage Outputs
 # ------------------------------------------------------------------------------

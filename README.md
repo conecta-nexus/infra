@@ -55,7 +55,7 @@ Infraestructura como código (IaC) en Terraform para el despliegue serverless de
 Para evitar el bloqueo de Terraform al intentar crear servicios en Cloud Run antes de que existan las imágenes en Artifact Registry, la infraestructura se divide en **3 fases**:
 
 1. **Fase 1 (Cimientos de Infraestructura)**: Habilita APIs de GCP, crea el repositorio en Artifact Registry, provisiona Cloud SQL (con todas las bases de datos) y configura las Service Accounts e IAM.
-2. **Fase 2 (Construcción y Push de Imágenes)**: Ejecuta Google Cloud Build para empaquetar y subir los contenedores (`auth`, `profile`, `frontend`, `gateway`) hacia Artifact Registry.
+2. **Fase 2 (Construcción y Push de Imágenes)**: Ejecuta Google Cloud Build para empaquetar y subir los contenedores (`auth`, `profile`, `challenge`, `application`, `frontend`, `gateway`) hacia Artifact Registry.
 3. **Fase 3 (Despliegue de Servicios Cloud Run)**: Activa la bandera `deploy_services = true` en Terraform, desplegando los microservicios y el API Gateway enlazado a las URLs generadas.
 
 ---
@@ -119,6 +119,8 @@ Al finalizar, Terraform mostrará las URLs públicas de acceso:
 - `frontend_url`: Interfaz gráfica web de Conecta Nexus.
 - `auth_service_url`: Microservicio de autenticación.
 - `profile_service_url`: Microservicio de perfiles.
+- `challenge_service_url`: Microservicio de retos y oportunidades.
+- `application_service_url`: Microservicio de postulaciones.
 
 ---
 
@@ -130,9 +132,16 @@ curl -i https://<GATEWAY_URL>/gateway/health
 ```
 Respuesta esperada: `{"status":"healthy","service":"gateway"}`
 
-### 2. Diagnóstico de Microservicio Auth
+### 2. Diagnóstico de Microservicios (a través del Gateway)
 ```bash
+# Diagnóstico de Auth
 curl -i https://<GATEWAY_URL>/services/auth/
+
+# Catálogo público de Challenges
+curl -i https://<GATEWAY_URL>/api/v1/challenges/catalog
+
+# Diagnóstico de Application
+curl -i https://<GATEWAY_URL>/services/application/
 ```
 
 ### 3. Registro y Login a través del Gateway
