@@ -448,6 +448,10 @@ resource "google_cloud_run_v2_service" "application" {
         value = var.django_secret_key
       }
       env {
+        name  = "DATABASE_URL"
+        value = "postgresql://${var.db_user}:${local.db_password}@/db_applications?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
+      }
+      env {
         name  = "POSTGRES_DB"
         value = "db_applications"
       }
