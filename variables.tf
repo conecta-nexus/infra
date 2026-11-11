@@ -120,6 +120,18 @@ variable "challenge_vpc_connector_cidr" {
   default     = "10.8.0.0/28"
 }
 
+variable "challenge_vpc_min_instances" {
+  type        = number
+  description = "Minimum instances for the Challenge VPC connector (between 2 and 9)."
+  default     = 2
+}
+
+variable "challenge_vpc_max_instances" {
+  type        = number
+  description = "Maximum instances for the Challenge VPC connector (between 3 and 10)."
+  default     = 3
+}
+
 # ------------------------------------------------------------------------------
 # Cloud Storage CORS Configuration
 # ------------------------------------------------------------------------------

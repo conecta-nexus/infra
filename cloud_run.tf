@@ -297,6 +297,9 @@ resource "google_vpc_access_connector" "challenge" {
   region        = var.region
   network       = var.challenge_vpc_network
   ip_cidr_range = var.challenge_vpc_connector_cidr
+  min_instances = var.challenge_vpc_min_instances
+  max_instances = var.challenge_vpc_max_instances
+  machine_type  = "e2-micro"
 
   depends_on = [
     google_project_service.services["vpcaccess.googleapis.com"]
@@ -362,8 +365,20 @@ resource "google_cloud_run_v2_service" "challenge" {
         value = "postgresql+asyncpg://${var.db_user}:${local.db_password}@/${google_sql_database.challenges.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
       }
       env {
+        name  = "JWT_PUBLIC_KEY"
+        value = local.jwt_public_key
+      }
+      env {
         name  = "JWT_PUBLIC_KEY_PATH"
         value = "certs/jwt_public.pem"
+      }
+      env {
+        name  = "STORAGE_AUTO_CREATE_BUCKET"
+        value = "false"
+      }
+      env {
+        name  = "STORAGE_BUCKET"
+        value = google_storage_bucket.challenge_attachments.name
       }
 
       resources {
