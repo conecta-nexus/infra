@@ -119,3 +119,13 @@ variable "challenge_vpc_connector_cidr" {
   description = "CIDR /28 IP range for the Challenge Serverless VPC Access connector."
   default     = "10.8.0.0/28"
 }
+
+# ------------------------------------------------------------------------------
+# Cloud Storage CORS Configuration
+# ------------------------------------------------------------------------------
+
+variable "cors_allowed_origins" {
+  type        = list(string)
+  description = "Allowed origins for Cloud Storage CORS configuration."
+  default     = ["http://localhost:3000", "https://conectanexus.ufps.edu.co"]
+}
