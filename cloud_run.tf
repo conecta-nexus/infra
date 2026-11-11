@@ -257,6 +257,14 @@ resource "google_cloud_run_v2_service" "gateway" {
         value = google_cloud_run_v2_service.profile[0].uri
       }
       env {
+        name  = "CHALLENGE_URL"
+        value = google_cloud_run_v2_service.challenge[0].uri
+      }
+      env {
+        name  = "APPLICATION_URL"
+        value = google_cloud_run_v2_service.application[0].uri
+      }
+      env {
         name  = "FRONTEND_URL"
         value = google_cloud_run_v2_service.frontend[0].uri
       }
@@ -273,6 +281,8 @@ resource "google_cloud_run_v2_service" "gateway" {
   depends_on = [
     google_cloud_run_v2_service.auth,
     google_cloud_run_v2_service.profile,
+    google_cloud_run_v2_service.challenge,
+    google_cloud_run_v2_service.application,
     google_cloud_run_v2_service.frontend,
     google_project_service.services["run.googleapis.com"]
   ]
@@ -375,6 +385,104 @@ resource "google_cloud_run_v2_service" "challenge" {
 }
 
 # ------------------------------------------------------------------------------
+# 6. Microservice: Application (Django + DRF + uv)
+# ------------------------------------------------------------------------------
+resource "google_cloud_run_v2_service" "application" {
+  count               = var.deploy_services ? 1 : 0
+  name                = "conecta-application"
+  location            = var.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = false
+
+  template {
+    service_account = google_service_account.cloud_run_sa.email
+
+    volumes {
+      name = "cloudsql"
+      cloud_sql_instance {
+        instances = [google_sql_database_instance.postgres.connection_name]
+      }
+    }
+
+    containers {
+      image = "${local.artifact_repo_url}/application:${var.image_tag}"
+
+      ports {
+        container_port = 8000
+      }
+
+      volume_mounts {
+        name       = "cloudsql"
+        mount_path = "/cloudsql"
+      }
+
+      env {
+        name  = "PYTHONUNBUFFERED"
+        value = "1"
+      }
+      env {
+        name  = "DEBUG"
+        value = "False"
+      }
+      env {
+        name  = "ALLOWED_HOSTS"
+        value = "*"
+      }
+      env {
+        name  = "SECRET_KEY"
+        value = var.django_secret_key
+      }
+      env {
+        name  = "POSTGRES_DB"
+        value = "db_applications"
+      }
+      env {
+        name  = "POSTGRES_USER"
+        value = var.db_user
+      }
+      env {
+        name  = "POSTGRES_PASSWORD"
+        value = local.db_password
+      }
+      env {
+        name  = "POSTGRES_HOST"
+        value = "/cloudsql/${google_sql_database_instance.postgres.connection_name}"
+      }
+      env {
+        name  = "POSTGRES_PORT"
+        value = "5432"
+      }
+      env {
+        name  = "JWT_PUBLIC_KEY"
+        value = local.jwt_public_key
+      }
+      env {
+        name  = "CHALLENGE_SERVICE_URL"
+        value = google_cloud_run_v2_service.challenge[0].uri
+      }
+      env {
+        name  = "CHALLENGE_SERVICE_TIMEOUT_SECONDS"
+        value = "5.0"
+      }
+
+      resources {
+        limits = {
+          cpu    = "1"
+          memory = "512Mi"
+        }
+      }
+    }
+  }
+
+  depends_on = [
+    google_sql_database.databases,
+    google_sql_user.db_user,
+    google_cloud_run_v2_service.challenge,
+    google_project_service.services["run.googleapis.com"]
+  ]
+}
+
+# ------------------------------------------------------------------------------
 # Public Access Permissions (roles/run.invoker for allUsers)
 # ------------------------------------------------------------------------------
 
@@ -414,8 +522,26 @@ resource "google_cloud_run_v2_service_iam_member" "public_profile" {
   member   = "allUsers"
 }
 
+resource "google_cloud_run_v2_service_iam_member" "public_challenge" {
+  count    = var.deploy_services ? 1 : 0
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.challenge[0].name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "public_application" {
+  count    = var.deploy_services ? 1 : 0
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.application[0].name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
 # ------------------------------------------------------------------------------
-# Service-to-Service Access Permissions (Gateway Runtime SA -> Challenge)
+# Service-to-Service Access Permissions (Gateway Runtime SA -> Microservices)
 # ------------------------------------------------------------------------------
 
 resource "google_cloud_run_v2_service_iam_member" "challenge_invoker" {
@@ -423,6 +549,15 @@ resource "google_cloud_run_v2_service_iam_member" "challenge_invoker" {
   project  = var.project_id
   location = var.region
   name     = google_cloud_run_v2_service.challenge[0].name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.cloud_run_sa.email}"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "application_invoker" {
+  count    = var.deploy_services ? 1 : 0
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.application[0].name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${google_service_account.cloud_run_sa.email}"
 }
