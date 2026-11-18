@@ -10,6 +10,8 @@ locals {
     "sqladmin.googleapis.com",         # Cloud SQL Admin API for database provisioning
     "iam.googleapis.com",              # Identity and Access Management
     "secretmanager.googleapis.com",    # Secret Manager (optional secret storage)
+    "vpcaccess.googleapis.com",        # Serverless VPC Access API for VPC connectors
+    "storage.googleapis.com",          # Cloud Storage API for technical attachments
   ]
 }
 

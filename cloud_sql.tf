@@ -18,7 +18,6 @@ locals {
   microservice_databases = [
     "db_auth",          # Auth microservice
     "db_profiles",      # Profile microservice
-    "db_challenges",    # Challenge microservice
     "db_applications",  # Application microservice
     "db_moderation",    # Moderation microservice
     "db_notifications", # Notification microservice
@@ -39,6 +38,21 @@ resource "google_sql_database_instance" "postgres" {
     disk_size         = 10
     disk_type         = "PD_SSD"
     availability_type = "ZONAL"
+
+    database_flags {
+      name  = "max_connections"
+      value = "100"
+    }
+
+    database_flags {
+      name  = "shared_buffers"
+      value = "16384" # 128MB (in 8kB blocks)
+    }
+
+    database_flags {
+      name  = "work_mem"
+      value = "16384" # 16MB (in kB) for JSONB indexing optimization
+    }
 
     ip_configuration {
       ipv4_enabled = true
@@ -65,6 +79,19 @@ resource "google_sql_user" "db_user" {
   name     = var.db_user
   instance = google_sql_database_instance.postgres.name
   password = local.db_password
+}
+
+# Cloud SQL IAM Database User for Challenge / Cloud Run Service Account
+resource "google_sql_user" "iam_challenge_sa_user" {
+  name     = trimsuffix(google_service_account.cloud_run_sa.email, ".gserviceaccount.com")
+  instance = google_sql_database_instance.postgres.name
+  type     = "CLOUD_IAM_SERVICE_ACCOUNT"
+}
+
+# Dedicated database resource for Challenge microservice
+resource "google_sql_database" "challenges" {
+  name     = "db_challenges"
+  instance = google_sql_database_instance.postgres.name
 }
 
 # Provision databases for each microservice declaratively

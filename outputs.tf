@@ -66,3 +66,16 @@ output "profile_service_url" {
   description = "Direct URL for the Profile microservice."
   value       = var.deploy_services ? google_cloud_run_v2_service.profile[0].uri : "Not deployed yet (Phase 1)."
 }
+
+# ------------------------------------------------------------------------------
+# Cloud Storage Outputs
+# ------------------------------------------------------------------------------
+output "challenge_attachments_bucket_name" {
+  description = "Name of the Google Cloud Storage bucket for challenge attachments."
+  value       = google_storage_bucket.challenge_attachments.name
+}
+
+output "challenge_attachments_bucket_url" {
+  description = "URL of the Google Cloud Storage bucket for challenge attachments."
+  value       = google_storage_bucket.challenge_attachments.url
+}
