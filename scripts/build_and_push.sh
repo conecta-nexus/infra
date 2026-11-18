@@ -88,7 +88,7 @@ echo -e "  ${BOLD}Destination Prefix:${RESET} ${CYAN}${REGISTRY_PREFIX}${RESET}"
 echo -e "----------------------------------------------------------------"
 
 # Current microservices to build and push
-SERVICES=("auth" "profile" "frontend" "gateway")
+SERVICES=("auth" "profile" "challenge" "application" "frontend" "gateway")
 
 for SERVICE in "${SERVICES[@]}"; do
     SERVICE_DIR="${ROOT_DIR}/${SERVICE}"
